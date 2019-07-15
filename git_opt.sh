@@ -1,5 +1,4 @@
 #!/bin/bash
-commitStr =$1
 git add .
-git commit -m commitStr
+git commit -m $1
 git push origin master
