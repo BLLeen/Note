@@ -285,6 +285,115 @@ public class CountDownLatch {
 
 理所当然CountDownLatch是线程安全的，它的减一操作是原子操作，一次只能被一个线程调用。
 
+
+
+# ThreadLocal
+
+用于解决多线程中**相同变量（线程之间不需要彼此的该变量状态）的访问冲突问题**，ThreadLocal会为每一个线程提供一个独立的**变量副本**，从而隔离了多个线程对数据的访问冲突。（**用空间换取性能**）
+
+```java
+/**当存储的为基本变量或者包装对象时**/
+public class ThreadLocalDemo{
+  /*定义一个全局变量 来存放线程需要的变量*/
+    public static ThreadLocal<Integer> tl = new ThreadLocal<Integer>();
+    public static void main(String[] args) {
+        /*创建两个线程*/
+        for(int i=0; i<2;i++){
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    Double d = Math.random()*10;
+                    /*存入当前线程独有的值*/
+                    tl.set(d.intValue());
+                    new A().get();
+                    new B().get();
+                }
+            }).start();
+        }
+    }
+    static class A{
+        public void get(){
+            /*取得当前线程所需要的值*/
+            System.out.println(tl.get());
+        }
+    }
+    static class B{
+        public void get(){
+            /*取得当前线程所需要的值*/
+            System.out.println(tl.get());
+        }
+    }
+}
+```
+
+## 内部实现
+
+- initialValue()
+
+```java
+protected T initialValue() {
+    return null;
+}
+```
+
+​		在set之前get会调用
+
+- WithInital()
+
+```java
+ThreadLocal<Integer> tl = ThreadLocal.withInitial(new Supplier<Integer>() {
+        @Override
+        public Integer get() {
+            // TODO Auto-generated method stub
+            return new Integer(8);
+        }
+    });
+    System.out.println(tl.get());
+```
+
+​		设置用于创建一个**线程局部变量**，变量的初始化值通过调用Supplier的get方法来确定。
+
+- get()
+
+```java
+public T get() {
+    //获取当前线程
+    Thread t = Thread.currentThread();
+    //获取当前线程的ThreadLocalMap对象
+    ThreadLocalMap map = getMap(t);
+    if (map != null) {
+        ThreadLocalMap.Entry e = map.getEntry(this);
+        if (e != null) {
+            @SuppressWarnings("unchecked")
+            T result = (T)e.value;
+            return result;
+        }
+    }
+    //变量还没有值，调用初始化方法
+    return setInitialValue();
+}
+
+private T setInitialValue() {
+    T value = initialValue();
+    Thread t = Thread.currentThread();
+    ThreadLocalMap map = getMap(t);
+    if (map != null)
+        //map里存储的value为对应的key为当前ThreadLocal对象
+        map.set(this, value);
+    else
+        createMap(t, value);
+    return value;
+}
+
+ThreadLocalMap getMap(Thread t) {
+        return t.threadLocals;
+    }
+```
+
+ 		返回当前线程的局部变量副本的值，如果此变量没有值，那么会调用initialValue方法初始化。
+
+
+
 # 底层实现
 
 ``` java
