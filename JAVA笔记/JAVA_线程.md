@@ -390,7 +390,13 @@ ThreadLocalMap getMap(Thread t) {
     }
 ```
 
- 		返回当前线程的局部变量副本的值，如果此变量没有值，那么会调用initialValue方法初始化。
+ 		返回当前线程的局部变量副本的值，如果此变量没有值，那么会调用initialValue()方法初始化。
+
+
+
+## 参考资料
+
+[切底明白ThreadLocal的原理与使用](https://blog.csdn.net/Oeljeklaus/article/details/80545749)
 
 
 
