@@ -287,9 +287,40 @@ public class CountDownLatch {
 
 
 
-# ThreadLocal
+# ThreadLocal ✏️
 
 用于解决多线程中**相同变量（线程之间不需要彼此的该变量状态）的访问冲突问题**，ThreadLocal会为每一个线程提供一个独立的**变量副本**，从而隔离了多个线程对数据的访问冲突。（**用空间换取性能**）
+
+例子1：
+
+```java
+public class ThreadLocalDemo implements Runnable{
+private static ThreadLocal<Integer> tl=new ThreadLocal<Integer>();
+@Override
+public void run() {
+    if(tl.get()==null)
+    tl.set(new Integer(1));
+    System.out.print(tl.get()+"\t");
+  }
+ public static void main(String args[]) {
+    int k=0;
+    for(int i=0;i<1000;i++) {
+        Thread t=new Thread(new ThreadLocalDemo());
+        t.start();
+    }
+  }
+}
+
+/**
+输出全为1，即每一个线程都维护自己的一个变量副本
+**/
+```
+
+
+
+  
+
+例子2：
 
 ```java
 /**当存储的为基本变量或者包装对象时**/
@@ -390,13 +421,88 @@ ThreadLocalMap getMap(Thread t) {
     }
 ```
 
- 		返回当前线程的局部变量副本的值，如果此变量没有值，那么会调用initialValue()方法初始化。
+ 	  返回当前线程的局部变量副本的值，如果此变量没有值，那么会调用initialValue()方法初始化。
 
+- set()
 
+```java
+public void set(T value) { 
+    //获得当前线程
+    Thread t = Thread.currentThread();
+    //获取当前线程的ThreadLocalMap对象
+    ThreadLocalMap map = getMap(t);
+    //若map不为空，将value存入map
+    if (map != null)
+        map.set(this, value);
+    else
+        //map为空，创建一个ThreadLocalMap，并将value存入map
+        createMap(t, value);
+}
+```
+
+​		设置当前线程局部变量副本的值
+
+- remove()
+
+```java
+public void remove() {
+     ThreadLocalMap m = getMap(Thread.currentThread());
+     if (m != null)
+         //清除value
+         m.remove(this);
+ }
+```
+
+​		该方法用于清除当前线程局部变量的值。变量值被清除后，若当前线程随后通过get读取该变量的值，则**initialValue方法会再次被调用对变量进行初始化**，除非在此期间调用了set方法。
+
+​		经过上面的分析，可知通过ThreadLocal创建的变量是维护在线程内部的，这就意味着线程只要不退出，那么对象的引用将一直存在。当线程退出的时候会进行一些清理工作，如下所示：
+
+```java
+private void exit() {
+    if (group != null) {
+        group.threadTerminated(this);
+        group = null;
+    }
+    /* Aggressively null out all reference fields: see bug 4006245 */
+    target = null;
+    //加速资源清理，threadLocals为ThreadLocal.ThreadLocalMap类型
+    threadLocals = null;
+    inheritableThreadLocals = null;
+    inheritedAccessControlContext = null;
+    blocker = null;
+    uncaughtExceptionHandler = null;
+}
+```
+
+  	此方法为private型，通过系统调用，给线程一个机会在其实际退出之前清理资源。
+
+  	上面多次出现了ThreadLocalMap类，有必要说明一下。ThreadLocalMap的实现采用了**弱引用**，弱引用在垃圾回收的时候被发现就会被回收。ThreadLocalMap内部由一系列的Entry构成，每一个Entry都是WeakReference<ThreadeLocal>类型的：
+
+```java
+static class Entry extends WeakReference<ThreadLocal<?>> {
+        Object value;
+        Entry(ThreadLocal<?> k, Object v) {
+            super(k);
+            value = v;
+        }
+    }
+```
+
+  内部维护一个Entry数组，用于存放线程的变量
+
+```java
+private Entry[] table;
+```
+
+## ThreadLocal内存泄漏问题
+
+使用**线程池**，**线程不会消亡**所以**弱引用**不会被**GC**。使用ThreadLocal线程池容易出问题。
 
 ## 参考资料
 
 [切底明白ThreadLocal的原理与使用](https://blog.csdn.net/Oeljeklaus/article/details/80545749)
+
+[ThreadLocal原理及内存泄露预防](https://www.baidu.com/link?url=G0oxqOR8_Usu_j1lEEtzzLgY_9mSvVatU-CtZ3cDxWc9uWX_hUFdefrIttTrR7sIXoukPAi4nWFkFxyKsW1zDfYFjnuFx2iFt-rLkbMTHsa&wd=&eqid=b01763ea00088caa000000065d52a71b)
 
 
 
