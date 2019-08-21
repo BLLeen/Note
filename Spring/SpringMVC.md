@@ -1,21 +1,68 @@
 
 ### Spring MVC
 
+参考资料：[springMVC学习](https://www.iteye.com/blogs/subjects/springMVC)
 
+## Controller
+
+参考博客：[**SpringMVC Controller 介绍**](https://www.iteye.com/blog/elim-1753271)
 
 ##### @Controller
+
+**@RestController**相当于每个方法加上**@ResponseBody**
+
 用于标记在一个类上，使用它标记的类就是一个SpringMVC Controller 对象。分发处理器将会扫描使用了该注解的类的方法，并检测该方法是否使用了@RequestMapping 注解。
 
-##### @RequestMapping("/xxx")
+##### @RequestMapping("")
 用来处理xxx请求地址映射的注解，可用于类或方法上。用于类上，表示类中的所有响应请求的方法都是以该地址作为父路径。
 <br>方法的返回值会被SpringMCV配置文件中的解析器解析为物理视图既为prefix/返回值/suffix(/WEB-INF/jsp/xxx.jsp)
+
 ```xml
 <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
         <property name="prefix" value="/WEB-INF/jsp/" />
         <property name="suffix" value=".jsp" />
 </bean>
 ```
-###### @RequestMapping的请求
+#### @RequestMapping 处理器方法支持的方法参数和返回类型
+
+##### 支持的参数类型
+
+（1 ）**HttpServlet 对象，主要包括HttpServletRequest 、HttpServletResponse 和HttpSession对象。**这些参数Spring 在调用处理器方法的时候会自动给它们赋值，所以当在处理器方法中需要使用到这些对象的时候，可以直接在方法上给定一个方法参数的申明，然后在方法体里面直接用就可以了。但是有一点需要注意的是在使用HttpSession 对象的时候，如果此时HttpSession 对象还没有建立起来的话就会有问题。
+
+（2 ）**Spring 自己的WebRequest 对象。** 使用该对象可以访问到存放在HttpServletRequest 和HttpSession 中的属性值。
+
+（3 ）**InputStream 、OutputStream 、Reader 和Writer 。** InputStream 和Reader 是针对HttpServletRequest 而言的，可以从里面取数据；OutputStream 和Writer 是针对HttpServletResponse 而言的，可以往里面写数据。
+
+（4 ）**使用@PathVariable 、@RequestParam 、@CookieValue 和@RequestHeader 标记的参数。**
+
+（5 ）**使用@ModelAttribute 标记的参数。**
+
+（6 ）**java.util.Map 、Spring 封装的Model 和ModelMap 。** 这些都可以用来封装模型数据，用来给视图做展示。  
+
+（7 ）**实体类。** 可以用来接收上传的参数。
+
+（8 ）**Spring 封装的MultipartFile 。** 用来接收上传文件的。
+
+（9 ）**Spring 封装的Errors 和BindingResult 对象。** 这两个对象参数必须紧接在需要验证的实体对象参数之后，它里面包含了实体对象的验证结果。
+
+##### 支持的返回类型
+
+（1 ）**一个包含模型和视图的ModelAndView 对象。**
+
+（2 ）**一个模型对象，这主要包括Spring 封装好的Model 和ModelMap ，以及java.util.Map 。**当没有视图返回的时候视图名称将由RequestToViewNameTranslator 来决定。
+
+（3 ）**一个View 对象。**这个时候如果在渲染视图的过程中模型的话就可以给处理器方法定义一个模型参数，然后在方法体里面往模型中添加值。
+
+（4 ）**一个String 字符串。**这往往代表的是一个**视图名称**。这个时候如果需要在渲染视图的过程中需要模型的话就可以给处理器方法一个模型参数，然后在方法体里面往模型中添加值就可以了。
+
+（5 ）**返回值是void 。**这种情况一般是我们直接把返回结果写到HttpServletResponse 中了，如果没有写的话，那么Spring 将会利用RequestToViewNameTranslator 来返回一个对应的视图名称。如果视图中需要模型的话，处理方法与返回字符串的情况相同。
+
+（6 ）如果处理器方法被注解**@ResponseBody **标记的话，那么处理器方法的任何返回类型都会通过HttpMessageConverters 转换之后写到HttpServletResponse 中，而不会像上面的那些情况一样当做视图或者模型来处理。
+
+（7 ）除以上几种情况之外的其他任何返回类型都会被**当做模型中的一个属性**来处理，而返回的**视图**还是由**RequestToViewNameTranslator 来决定**，添加到模型中的属性名称可以在该方法上用@ModelAttribute(“attributeName”) 来定义，否则将使用返回类型的类名称的首字母小写形式来表示。使用@ModelAttribute 标记的方法会在@RequestMapping 标记的方法执行之前执行。
+
+##### @RequestMapping的请求
+
 除了URL请求外，还可以使用请求方法，请求参数，请求头来精确映射请求。value(URL)、method(请求方法)、params(请求参数) 及 heads(请求头)。
 ####### params 和 headers支持简单的表达式：
 - param1: 表示请求必须包含名为 param1 的请求参数 
@@ -168,7 +215,7 @@ public String MapTest(Map map)
 ### 隐藏域
 在RESTful写求方式的时候用到了type="hidden"这个属性,这个属性代表这个标签是对于客户端不可见的
 
-### 如果希望服务器输出什么浏览器就能看到什么，那么在服务器端都要以字符串的形式进行输出
+如果希望服务器输出什么浏览器就能看到什么，那么在服务器端都要以字符串的形式进行输出
 
 ### 将数据模型对象传入视图层
 1. ModelAndView
