@@ -74,9 +74,17 @@ es.execute(Object obj);
 es.shutdown;
 ```
 
-## Callable接口
+### 带返回值的线程执行
 
-实现Runnable接口的线程run()方法不会返回值不可以抛出异常，而Callable的call()可以返回结果而且可以抛出异常。运行方法是call()，需要ExecutorService.submit(Callable实现类对象))调用Callable并返回FutureTask类(Future接口的实现类)。
+#### Callable接口
+
+实现Runnable接口的线程run()方法不会返回值不可以抛出异常，而Callable的call()可以返回结果而且可以抛出异常。Callable的实现与Runnable一样需要Thread线程。执行的方法是call()。
+
+#### Futrue接口
+
+**Future**接口是对Callable执行过程的控制，返回值，异常，结束运行等。实现类**FunableTask**。
+
+需要ExecutorService.submit(Callable实现类对象))调用Callable并返回FutureTask类(Future接口的实现类)。
 
 - FutureTask.isDone()检查是否完成
 - FutureTas.get()获取结果，这会使的其他线程被阻塞，直到该线程获得最终结果
