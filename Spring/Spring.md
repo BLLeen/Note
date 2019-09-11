@@ -966,7 +966,7 @@ public class MethodSecurityConfig extends GlobalMethodSecurityConfig{
 
 
 
-## 注解积累
+## 注解笔记
 
 ### @ComponentScan[(basePackages={"",""})]
 开启扫描
@@ -1000,12 +1000,20 @@ public class MethodSecurityConfig extends GlobalMethodSecurityConfig{
 - @Resource
 为类对象以Bean名字注入
 
-### @Profile(active)
+- @Profile(active)
+
 @Profile("dev")它会告诉Spring这个配置类中的bean只有在dev profile激活时才会创建。如果
 dev profile没有激活的话，那么带有@Bean注解的方法都会被忽略掉
 
-### @GetMapping
+- @GetMapping
+
 @RequestMapping(method = RequestMethod.GET)的缩写
+
+- @PostConstruct
+
+  在spring的Bean中按照**Constructor构造方法**、**@Autowired**依赖依赖注入、**@PostConstruct**方法顺序执行。
+
+- 
 
 
 # 后缀
