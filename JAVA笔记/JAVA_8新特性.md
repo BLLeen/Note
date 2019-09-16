@@ -34,22 +34,31 @@
 
 
 # Stream
-是数据渠道，用于操作数据源(集合、数组等)所生成的元素序列。集合讲的是数据，流讲的是计算,不对源数据进行操作
-### 生成stream
+是数据渠道，用于操作数据源(集合、数组、文件等)所生成的元素序列。集合讲的是数据，流讲的是计算,不对**源数据**进行操作
 
-- Stream的静态方法 of 可以将数组转换为Stream
+$\color{red}{注意}$：
+
+Stream只是一个计算通道，自己不会存储元素；
+
+Stream不会改变源对象，相反，他们会返回一个新的Stream对象。
+
+Stream操作是延时的，只有在执行终止操作时才会执行。
+
+## 生成stream
+
+- **Stream的静态方法 of**可以将数组转换为Stream
 
 ```
 Stream<> stream = Stream.of(数组);
 ```
 
-- 集合的静态方法.stream();
+- 集合的静态方法**.stream()**;
 
 ```
 Stream<> stream = list.stream();
 ```
 
-- Arrays.stream()
+- **Arrays.stream()**
 
 ```
 Arrays.stream(T[] array) //全部
@@ -64,7 +73,7 @@ Arrays.stream(T[] array) //全部
 Stream<String> stream = Stream.generate(() -> "java");  
 ```
 
-### 中间操作
+## 中间操作
 
 - Filter
 
@@ -125,7 +134,7 @@ stream.flatMap(list -> slist.stream()).forEach(i -> System.out.println(i));
 
 跳过元素，返回一个扔掉了前n个元素的流。若流中元素不足n个，则返回一个空流。与limit（n）互补
 
-### 终端操作
+## 终端操作
 
 - Collect
 
@@ -181,3 +190,18 @@ stream.forEach(str -> System.out.println(str));
 - reduce(BinaryOperator b)
 
 可以将流中元素通过方法里的操作反复结合起来，得到一个值，返回Optional类
+
+
+
+## 并行流
+
+
+
+
+
+# 参考资料
+
+
+
+[jdk8的新特性总结（二）：StreamAPI](https://blog.csdn.net/caishi13202/article/details/82631779)
+
