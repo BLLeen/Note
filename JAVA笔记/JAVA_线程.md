@@ -10,21 +10,32 @@ CPU切分时间周期性的切换线程实现并发。JAVA的线程机制是抢�
 
 ## sleep()
 
-Tread.sleep(long)睡眠ms，交出CPU，不释放资源锁，处于阻塞状态
+Tread.sleep(long)睡眠ms，交出CPU，**不释放资源锁**，处于阻塞状态。
 TimeUnit.SECEND.sleep(num)，以指定时间单位
+
+
 
 ## wait() [Object类]
 
-Object.wait([long time])，交出CPU，释放锁，处于阻塞状态，当时间到或是notify()时唤醒
-ject.wait([long time])，交出CPU，释放锁，处于阻塞状态，当时间到或是notify()时唤
+Object.wait([long time])，交出CPU，释放锁，处于阻塞状态，当时间到或是notify()时唤醒。
+
+
 
 ## yield()
 
-Thread.yield()放弃运行，进入就绪状态，让出CPU和资源锁
+Thread.yield()放弃运行，进入就绪状态，让出CPU和资源锁。它能让当前线程由“**运行状态**”进入到“**就绪状态**”，从而让其它具有相同优先级的等待线程获取执行权；但是，并不能保证在当前线程调用yield()之后其它具有相同优先级的线程就一定能获得执行权，也有可能是**当前线程又进入到“运行状态”**继续运行。
+
+> thread1 priority 5
+>
+>  thread2 priority 6
+>
+> 如果只有这两个线程竞争，thread2.yield()，还是thread2继续运行。因为thread2.yield()后，thread1.thread2一起竞争，结果thread2的优先级高，使所以又是thread2运行
+
+
 
 ## join()
 
-Thread.join()加入运行，外部调用**线程B**的方法的**线程A**被阻塞，让出CPU和资源，直到这个方法的所有者**线程B**运行结束
+别的线程join()加入运行，外部调用**线程B**的方法的**线程A**被阻塞，让出CPU和资源，直到这个方法的所有者**线程B**运行结束
 
 ## notify()
 
