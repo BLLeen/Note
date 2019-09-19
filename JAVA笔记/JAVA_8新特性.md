@@ -75,11 +75,13 @@ Stream<String> stream = Stream.generate(() -> "java");
 
 ## 中间操作
 
-- Filter
+- filter()
 
 过滤元素
-<br>接受一个布尔型返回值函数作为参数，该函数用Lambda表达式表示,false则滤掉
-- Reduce
+
+接受一个布尔型返回值函数作为参数，该函数用Lambda表达式表示,false则滤掉
+
+- reduce()
 
 感觉类似递归，累加
 
