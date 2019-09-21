@@ -6,24 +6,31 @@ CPU切分时间周期性的切换线程实现并发。JAVA的线程机制是抢�
 
 # Thread
 
-垃圾回收无法对这个对象进行回收，只能等其死亡
+垃圾回收无法对这个类对象进行回收，只能等其死亡
 
 ## sleep()
 
-Tread.sleep(long)睡眠ms，交出CPU，**不释放资源锁**，处于阻塞状态。
-TimeUnit.SECEND.sleep(num)，以指定时间单位
+Tread.sleep()睡眠，交出CPU，**不释放资源锁**，处于阻塞状态。
+
+> TimeUnit.SECEND.sleep(num)，以指定时间单位 
 
 
 
 ## wait() [Object类]
 
-Object.wait([long time])，交出CPU，释放锁，处于阻塞状态，当时间到或是notify()时唤醒。
+wait([long time])，让线程交出CPU，释放资源锁，处于阻塞状态，当时间到或是notify()时唤醒。
+
+
+
+## notify()
+
+通知一个线程获取锁，不一定马上唤醒线程
 
 
 
 ## yield()
 
-Thread.yield()放弃运行，进入就绪状态，让出CPU和资源锁。它能让当前线程由“**运行状态**”进入到“**就绪状态**”，从而让其它具有相同优先级的等待线程获取执行权；但是，并不能保证在当前线程调用yield()之后其它具有相同优先级的线程就一定能获得执行权，也有可能是**当前线程又进入到“运行状态”**继续运行。
+Thread.yield()放弃运行，进入就绪状态，让出CPU，**不放资源锁**。它能让当前线程由“**运行状态**”进入到“**就绪状态**”，从而让其它具有相同优先级的等待线程获取执行权；但是，并不能保证在当前线程调用yield()之后其它具有相同优先级的线程就一定能获得执行权，也有可能是**当前线程又进入到“运行状态”**继续运行。
 
 > thread1 priority 5
 >
@@ -36,10 +43,6 @@ Thread.yield()放弃运行，进入就绪状态，让出CPU和资源锁。它能
 ## join()
 
 别的线程join()加入运行，外部调用**线程B**的方法的**线程A**被阻塞，让出CPU和资源，直到这个方法的所有者**线程B**运行结束
-
-## notify()
-
-通知一个线程获取锁，不一定马上唤醒线程
 
 ## Thread.currentTread()
 
@@ -54,36 +57,60 @@ public ThreadPoolExecutor(int corePoolSize,int maximumPoolSize,long keepAliveTim
         BlockingQueue<Runnable> workQueue,ThreadFactory threadFactory,RejectedExecutionHandler handler);
 ```
 
-- **corePoolSize**：**核心池的大小**，这个参数跟后面讲述的线程池的实现原理有非常大的关系。在创建了线程池后，默认情况下，线程池中并没有任何线程，而是等待有任务到来才创建线程去执行任务，除非调用了prestartAllCoreThreads()或者prestartCoreThread()方法，从这2个方法的名字就可以看出，是预创建线程的意思，即在没有任务到来之前就创建corePoolSize个线程或者一个线程。默认情况下，在创建了线程池后，线程池中的线程数为0，当有任务来之后，就会创建一个线程去执行任务，当线程池中的线程数目达到corePoolSize后，就会把到达的任务放到缓存队列当中；
+- **corePoolSize**：**核心池的大小**，（即在没有任务需要执行的时候线程池的大小，并且只有在工作队列满了的情况下才会创建超出这个数量的线程）。在创建了ThreadPoolExecutor后，默认情况下，线程池中并没有任何线程，而是等待有任务到来才创建线程去执行任务，除非调用了prestartAllCoreThreads()或者prestartCoreThread()方法，从这2个方法的名字就可以看出，是预创建线程的意思，即在没有任务到来之前就创建corePoolSize个线程或者一个线程。默认情况下，在创建了线程池后，线程池中的线程数为0，当有任务来之后，就会创建一个线程去执行任务，当线程池中的线程数目达到corePoolSize后，就会把到达的任务放到**缓存队列**当中；
+
 - **maximumPoolSize**：**线程池最大线程数**，这个参数也是一个非常重要的参数，它表示在线程池中最多能创建多少个线程；
-- **keepAliveTime**：表示线程没有任务执行时最多保持多久时间会终止。默认情况下，只有当线程池中的线程数大于corePoolSize时，keepAliveTime才会起作用，直到线程池中的线程数不大于corePoolSize，即当线程池中的线程数大于corePoolSize时，如果一个线程空闲的时间达到keepAliveTime，则会终止，直到线程池中的线程数不超过corePoolSize。但是如果调用了allowCoreThreadTimeOut(boolean)方法，在线程池中的线程数不大于corePoolSize时，keepAliveTime参数也会起作用，直到线程池中的线程数为0；
+
+  > maximumPoolSize = 核心线程数 + 非核心线程数
+
+- **keepAliveTime**：**表示线程没有任务执行时最多保持多久时间会终止**。**poolSize**（当前线程池线程数）大于**corePoolSize**时，起作用。**poolSize**等于**corePoolSize**时，是否起作用，取决于**allowCoreThreadTimeOut**。
+
+- **allowCoreThreadTimeOut**：
+
+  该属性用来控制是否允许核心线程超时退出。如果线程池的大小已经达到了**corePoolSize**，不管有没有任务需要执行，线程池都会保证这些核心线程处于存活状态。
+
 - **unit**：参数keepAliveTime的时间单位，有7种取值，在TimeUnit类中有7种静态属性
 
-TimeUnit.DAYS;               //天
-TimeUnit.HOURS;             //小时
-TimeUnit.MINUTES;           //分钟
-TimeUnit.SECONDS;           //秒
-TimeUnit.MILLISECONDS;      //毫秒
-TimeUnit.MICROSECONDS;      //微妙
-TimeUnit.NANOSECONDS;       //纳秒
+  >TimeUnit.DAYS;               //天
+  >TimeUnit.HOURS;             //小时
+  >TimeUnit.MINUTES;           //分钟
+  >TimeUnit.SECONDS;           //秒
+  >TimeUnit.MILLISECONDS;      //毫秒
+  >TimeUnit.MICROSECONDS;      //微妙
+  >TimeUnit.NANOSECONDS;       //纳秒
 
-```java
-ExcutorService es = Excutors.newCachedThreadPool();//使用时新建一个线程
-es.execute(Object obj);
-es.shutdown;
-```
+- **BlockingQueue\<Runnable> workQueue**：存放**被提交**但**尚未被执行**的任务的队列
 
-```java
-ExcutorService es = Excutors.newFixedThreadPool(int num);//创建num个线程，这几个线程将被复用
-es.execute(Object obj);
-es.shutdown;
-```
+  > 1. **直接提交的任务队列**（SynchronousQueue）-- 不保存拒绝策略取决于「maximumPoolSize」
+  >    - SynchronousQueue没有容量。
+  >    - 提交的任务不会被真实的保存在队列中，而总是将新任务提交给线程执行。如果没有空闲的线程，则尝试创建新的线程。如果线程数大于最大值maximumPoolSize，则**执行拒绝策略**。
+  >
+  > 2. **有界的任务队列**（ArrayBlockingQueue）-- 拒绝策略取决于「maximumPoolSize」
+  >    - 创建队列时，指定队列的最大容量。
+  >    - 若有新的任务要执行，如果线程池中的线程数小于corePoolSize，则会优先创建新的线程。若大于corePoolSize，则会将新任务加入到等待队列中。
+  >    - 若等待队列已满，无法加入。如果总线程数不大于线程数最大值maximumPoolSize，则创建新的线程执行任务。若大于maximumPoolSize，则**执行拒绝策略**。
+  >
+  > 3. **无界的任务队列**（LinkedBlockingQueue）
+  >    - 与有界队列相比，除非系统资源耗尽，否则不存在任务入队失败的情况。
+  >    - 若有新的任务要执行，如果线程池中的线程数小于corePoolSize，线程池会创建新的线程。若大于corePoolSize，此时又没有空闲的线程资源，则任务直接进入等待队列。
+  >    - 当线程池中的线程数达到corePoolSize后，线程池不会创建新的线程。
+  >    - 若任务创建和处理的速度差异很大，无界队列将保持快速增长，直到耗尽系统内存。
+  >    - 使用无界队列将导致在所有 corePoolSize 线程都忙时，新任务在队列中等待。这样，创建的线程就不会超过 corePoolSize（因此，**maximumPoolSize 就无效**）。当每个任务完全独立于其他任务，即任务执行互不影响时，适合于使用无界队列；例如，在 Web 页服务器中。这种排队可用于处理瞬态突发请求，当命令以超过队列所能处理的平均数连续到达时，此策略允许无界线程具有增长的可能性。
+  >
+  > 4. **优先任务队列**（PriorityBlockingQueue）
+  >    - 带有执行优先级的队列。是一个特殊的无界队列。
+  >    -  ArrayBlockingQueue和LinkedBlockingQueue都是按照先进先出算法来处理任务。而PriorityBlockingQueue可根据任务自身的优先级顺序先后执行（总是确保高优先级的任务先执行）。
 
-```java
-ExcutorService es = Excutors.newSingleThreadPool();//创建一个线程，排队复用
-es.execute(Object obj);
-es.shutdown;
-```
+- **ThreadFactory threadFactory**：
+
+- **RejectedExecutionHandler handler**：线程池对拒绝任务的处理策略。在 ThreadPoolExecutor 里面定义了 4 种 handler 策略，
+
+  > 1. **CallerRunsPolicy** ：这个策略重试添加当前的任务，他会自动重复调用 execute() 方法，直到成功。
+  > 2. **AbortPolicy** ：对拒绝任务抛弃处理，并且抛出异常。
+  > 3. **DiscardPolicy**：对拒绝任务直接无声抛弃，没有异常信息。
+  > 4. **DiscardOldestPolicy**：对拒绝任务不抛弃，而是抛弃队列里面等待最久的一个线程，然后把拒绝任务加到队列。 
+
+
 
 ### 带返回值的线程执行
 
@@ -179,16 +206,47 @@ public void run() {
 
 ## Synchronized
 
-当对一个方法或者代码块使用它时，当一个线程获得了这个锁，那么其它的线程就会陷入挂起状态，在java中也就表现为sleep状态，我们都知道线程的挂起和运行时要转入操作系统的内核态的（与内核态对应的便是用户态），这样特别浪费cpu资源，所以这个重量级锁是名副其实的！
+当对一个方法或者代码块使用它时，当一个线程获得了这个锁，那么其它的线程就会陷入挂起状态，在java中也就表现为sleep状态，我们都知道线程的挂起和运行时要转入操作系统的内核态的（与内核态对应的便是用户态），这样特别浪费cpu资源，所以这个重量级锁
+
+### 1. 修饰类
+
+其作用的范围是synchronized后面括号括起来的部分，作用的对象是这个类的所有对象。
+
+### 2. 修饰方法
+
+synchronized方法，一定要显示标明，它是不能隐式标明的
+
+### 3. 修饰静态方法
+
+修饰静态方法的对象锁是类对象。
+
+### 4. 修饰代码块
+
+> synchronized(this){} //当前对象锁
+>
+> synchronized(类对象){} //类对象锁
+
+当一个线程访问obj的**一个**synchronized(this)同步代码块时，其他线程对obj中所有**其它**synchronized(this)同步代码块的访问将**被阻塞**。因为**对象锁只有一个**。
 
 ## Volatile
 
-修饰的变量能够使得：
+**参考资料**：
+
+- [【Java 并发笔记】volatile 相关整理](https://www.jianshu.com/p/ccfe24b63d87)
+
+修饰的变量：
 
 1. 使得其他线程对该变量缓存无效
 2. 线程修改当前值时立即写入主存中
 
 **保证可见性，不保证原子性**
+
+> 保证变量在**线程间可见**，对volatile变量所有的写操作都能立即反应到其他线程中，换句话说，**volatile变量在各个线程中是一致的**（得益于java内存模型—"先行发生原则"），并不能是该变量为原子操作。比如多个线程同时对**volatile i **执行加1操作，那么**线程A**和**线程B**内存中获取的都是i当前值（假设当前为10），则A，B执行+1过后为11。
+
+**适用条件：**
+
+- 对变量的写操作不依赖于当前值。
+- 该变量没有包含在具有其他变量的不变式中。
 
 ## ReentrantLock重入锁
 
