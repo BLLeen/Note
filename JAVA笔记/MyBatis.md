@@ -19,9 +19,7 @@
 </dependency>
 ```
 
-
-
-## 配置
+# 配置
 
 1. mybatis-config.xml
 
@@ -54,8 +52,9 @@
 spring Bean配置
 
 ```xml
+	<!--1.配置数据源-->
 	<!-- druid数据库连接池 -->
-  <bean id="mysqlDataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+  <bean id="druidDataSource1" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
         <!-- 基本属性 url、user、password127.0.0.1 -->
         <property name="driverClassName" value="${jdbc.driver}" />
         <property name="url" value="${jdbc.url}" />
@@ -90,7 +89,7 @@ spring Bean配置
         <property name="filters" value="stat" />
   </bean>
 	<!-- druid数据库连接池 -->
-	<bean id="DataSource" class="org.apache.ibatis.datasource.pooled.PooledDataSource">
+	<bean id="druidDataSource2" class="org.apache.ibatis.datasource.pooled.PooledDataSource">
         <!-- 基本属性 url、user、password -->
         <property name="driver" value="${jdbc.driver}" />
         <property name="url" value="${jdbc.url}" />
@@ -106,26 +105,26 @@ spring Bean配置
         <property name="password" value="${jdbc.password}"/>
    </bean>
 
-	 <!-- 会话工厂bean sqlSessionFactoryBean -->
+	 <!-- 2.会话工厂bean sqlSessionFactoryBean 用于生产SqlSession-->
    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
-        <!-- 数据源 -->
-        <property name="dataSource" ref="h2DataSource"></property>
-        <!-- sql映射文件路径 -->
-        <property name="configLocation" value="classpath:mybatis-config.xml"/>
-    </bean>
+       <!-- 数据源 -->
+       <property name="dataSource" ref="h2DataSource"></property>
+       <!-- sql映射文件路径 -->
+       <property name="configLocation" value="classpath:mybatis-config.xml"/>
+   </bean>
 
- 		<!-- 自动扫描对象关系映射 -->
-    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
-        <!--指定会话工厂，如果当前上下文中只定义了一个则该属性可省去 -->
-        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
-        <!-- 指定要自动扫描接口的基础包，实现接口 -->
-        <property name="basePackage" value="com.xiong.demo.spring.dao.inter"></property>
-    </bean>
+ 	 <!-- 3.自动扫描对象关系映射 Mapper-->
+   <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+       <!--指定会话工厂，如果当前上下文中只定义了一个则该属性可省去 -->
+       <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
+       <!-- 指定要自动扫描mapper接口的包，实现接口 -->
+       <property name="basePackage" value="com.xiong.demo.spring.dao.inter"></property>
+   </bean>
 ```
 
  ![](/Users/qudian/Documents/MySpace/Note/pic_图片/mybatis流程.png)
 
-### 配置总结
+## 配置总结
 
 可以这么总结Mybatis或者帮助理解Mybatis的配置，我总结了以下三点提供参考：
 
@@ -133,9 +132,17 @@ spring Bean配置
 - 归根结底程序代码中我们屏蔽了各种配置映射，只显式调用使用Mapper接口，那么接口实现类的获得是通过SqlSession.getMapper()获得；
 - 那么mapper接口实现类的获得是通过mybatis-config.xml->SqlSessionFactoryBuilder->SqlSessionFacotry->SqlSession->mapper；
 
-## mybatis-spring
+## mybatis-spring依赖包
 
 MyBatis-Spring 会帮助你将 MyBatis 代码无缝地整合到 Spring 中。它将允许 MyBatis 参与到 Spring 的**事务管理**之中，创建映射器 mapper 和 **`SqlSession`** 并注入到 bean 中，以及将 Mybatis 的异常转换为 Spring 的 **`DataAccessException`**。最终，可以做到应用代码不依赖于 MyBatis，Spring 或 MyBatis-Spring。
+
+
+
+# Mybatis生命周期　
+
+
+
+# 缓存
 
 
 
