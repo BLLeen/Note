@@ -181,6 +181,7 @@ linux文件服务
 将container1的环境变量添加到容器，container1的host更新到目标容器的/etc/hosts
 <br>但是container1的ip在添加的环境变量中不会自动更新，host会自动更新。
 <br>环境变量
+
 - container1容器Dockerfile中ENV标签设置的环境变量
 - container1容器用docker run命令创建，命令中包含的 -e或--env或--env-file设置的环境变量
 
@@ -195,3 +196,14 @@ linux文件服务
 ```
 
 # 容器部署
+
+
+
+# 软件镜像demo
+
+## mysql
+
+```shell
+docker run --name=mysql_5.6 -p 3306:3306 -e MYSQL_ROOT_PASSWORD=root -e TZ=Asia/Shanghai -d mysql:5.6.45
+```
+

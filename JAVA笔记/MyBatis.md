@@ -1,7 +1,9 @@
-# MyBatis
+# MyBatis 
 
 1. 根据 JDBC 规范建立与数据库的连接。
 2. 通过反射打通**Java对象**和**数据库参数**和**返回值**之间相互转化的关系。
+
+⚠️**先不结合spring来使用，这样可以更加深入的了解**
 
 # 依赖
 
@@ -11,134 +13,180 @@
   <artifactId>mybatis</artifactId>
   <version>3.4.6</version>
 </dependency>
-
-<dependency>
-  <groupId>org.mybatis</groupId>
- 	<artifactId>mybatis-spring</artifactId>
-	<version>1.3.2</version>
-</dependency>
 ```
 
 # 配置
 
-1. mybatis-config.xml
+1. Mapper.xml
 
 ```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!--配置命名空间，相当于这个这些接口的命名空间-->
+<!--对于使用Mapper实现类方法获取CRUD，这个命名空间就是该来的全路径com.example.dao.inter.UserMapper-->
+<mapper namespace="UserMapper" >
+    <resultMap id="BaseResultMap" type="com.xiong.demo.mybatis_native.dao.entity.User" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="user_id" property="userId" jdbcType="BIGINT" />
+        <result column="name" property="name" jdbcType="VARCHAR" />
+        <result column="age" property="age" jdbcType="INTEGER" />
+        <result column="address" property="address" jdbcType="VARCHAR" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List" >
+        id,user_id,name,age,address,create_time,update_time
+    </sql>
+
+    <select id="getUserByUserId" resultMap="BaseResultMap" parameterType="java.lang.Long">
+        select
+        <include refid="Base_Column_List" />
+        from user
+        where user_id = #{userId,jdbcType=BIGINT}
+    </select>
+
+    <insert id="insertUser" parameterType="com.xiong.demo.mybatis_native.dao.entity.User">
+            insert into user
+             (user_id,name,age,address,create_time,update_time)
+             values
+             (#{userId,jdbcType=BIGINT},#{name,jdbcType=VARCHAR},#{age,jdbcType=INTEGER},
+             #{address,jdbcType=VARCHAR},#{createTime,jdbcType=TIMESTAMP},#{updateTime,jdbcType=TIMESTAMP});
+    </insert>
+</mapper>
+
+```
+
+
+
+2. mybatis-config.xml
+
+[mybatis-config.xml详解](https://mybatis.org/mybatis-3/zh/configuration.html)
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<!-- 根标签 -->
 <configuration>
+<!--配置信息，可以用${}在下文获取-->
+	<properties>
+    <property name="driver" value="com.mysql.jdbc.Driver"/>
+    <property name="url" value="jdbc:mysql://127.0.0.1:3306/db?useUnicode=true;characterEncoding=utf-8"/>
+    <property name="username" value="root"/>
+    <property name="password" value="123456"/>
+	</properties>
+  
   <!--配置-->
-    <settings>
-        <setting name="cacheEnabled" value="false"/>
-        <setting name="lazyLoadingEnabled" value="true"/>
-        <setting name="aggressiveLazyLoading" value="true"/>
-        <setting name="multipleResultSetsEnabled" value="true"/>
-        <setting name="useColumnLabel" value="true"/>
-        <setting name="useGeneratedKeys" value="false"/>
-        <setting name="autoMappingBehavior" value="PARTIAL"/>
-        <setting name="defaultExecutorType" value="SIMPLE"/>
-        <setting name="defaultStatementTimeout" value="300"/>
-        <!-- <setting name="mapUnderscoreToCamelCase" value="true"/> 自动转换大小写去除 -->
-    </settings>
-
-    <!--mapper的ml映射文件，用于mapper接口 ：mapper xml文件映射-->
-    <mappers>
-        <mapper resource="mapper/user-mapper.xml"/>
-    </mappers>
+  <settings>
+    <setting name="cacheEnabled" value="false"/>
+   	<setting name="lazyLoadingEnabled" value="true"/>
+   	<setting name="aggressiveLazyLoading" value="true"/>
+    <setting name="multipleResultSetsEnabled" value="true"/>
+    <setting name="useColumnLabel" value="true"/>
+    <setting name="useGeneratedKeys" value="false"/>
+    <setting name="autoMappingBehavior" value="PARTIAL"/>
+    <setting name="defaultExecutorType" value="SIMPLE"/>
+    <setting name="defaultStatementTimeout" value="300"/>
+    <!-- <setting name="mapUnderscoreToCamelCase" value="true"/> 自动转换大小写去除 -->
+ </settings>
+  <!-- 环境，可以配置多个，default：指定采用哪个环境 -->
+  <environments default="test">
+      <!-- id：唯一标识 -->
+      <environment id="test">
+         <!-- 事务管理器，JDBC类型的事务管理器 -->
+         <transactionManager type="JDBC" />
+         <!-- 数据源，池类型的数据源 -->
+         <dataSource type="POOLED">
+            <property name="driver" value="com.mysql.jdbc.Driver" />
+            <property name="url" value="jdbc:mysql://127.0.0.1:3306/mybatis-110" />
+            <property name="username" value="root" />
+            <property name="password" value="123456" />
+         </dataSource>
+      </environment>
+      <environment id="development">
+         <!-- 事务管理器，JDBC类型的事务管理器 -->
+         <transactionManager type="JDBC" />
+         <!-- 数据源，池类型的数据源 -->
+         <dataSource type="POOLED">
+            <property name="driver" value="${driver}"/> 
+            <property name="url" value="${url}"/>
+            <property name="username" value="${username}" />
+            <property name="password" value="${password}" />
+         </dataSource>
+      </environment>
+  </environments>
+  <!--mapper xml映射文件-->
+  <mappers>
+    <mapper resource="mappers/UserMapper.xml"/>
+    <mapper resource="mappers/UserMapper1.xml"/>
+    <!--使用@Mapper的Mapper接口-->
+    <mapper class="com.xiong.demo.mybatis_native.dao.entity.UserMapper"/>
+    <!--使用@Mapper的Mapper接口的包-->
+    <package name="com.xiong.demo.mybatis_native.dao.entity"/>
+  </mappers>
 </configuration>
+
 ```
 
-spring Bean配置
 
-```xml
-	<!--1.配置数据源-->
-	<!-- druid数据库连接池 -->
-  <bean id="druidDataSource1" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
-        <!-- 基本属性 url、user、password127.0.0.1 -->
-        <property name="driverClassName" value="${jdbc.driver}" />
-        <property name="url" value="${jdbc.url}" />
-        <property name="username" value="${jdbc.username}" />
-        <property name="password" value="${jdbc.password}"/>
-        <!-- 配置初始化大小、最小、最大 -->
-        <property name="initialSize" value="2" />
-        <property name="minIdle" value="1" />
-        <property name="maxActive" value="20" />
 
-        <!-- 配置获取连接等待超时的时间 -->
-        <property name="maxWait" value="60000" />
+3. java代码中使用
 
-        <!-- 配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒 -->
-        <property name="timeBetweenEvictionRunsMillis" value="60000" />
+```java
+// 指定全局配置文件
+private static String resource = "mybatis-config.xml";
+// 读取配置文件
+InputStream inputStream = Resources.getResourceAsStream(resource);
+// 构建sqlSessionFactory
+sqlSessionFactory= new SqlSessionFactoryBuilder().build(inputStream);
+// 获取sqlSession
+SqlSession sqlSession = sqlSessionFactory.openSession();
+// 操作CRUD，第一个参数：指定statement，规则：namespace.sqlId
+		// 第二个参数：指定传入sql的参数,这里1L是UserId
+/**
+*直接使用SqlSession来进行CRUD
+**/
+User user = sqlSession.selectOne("UserMapper.getUserByUserId", 1L);
 
-        <!-- 配置一个连接在池中最小生存的时间，单位是毫秒 -->
-        <property name="minEvictableIdleTimeMillis" value="300000" />
+/**
+*使用Mapper实现类来进行CRUD
+**/
 
-        <!-- 验证连接有效与否的SQL，不同的数据配置不同 -->
 
-        <property name="validationQuery" value="SELECT 'x' from dual " />
-        <property name="testWhileIdle" value="true" />
-        <property name="testOnBorrow" value="false" />
-        <property name="testOnReturn" value="false" />
 
-        <!-- 打开PSCache，并且指定每个连接上PSCache的大小 -->
-        <property name="poolPreparedStatements" value="true" />
-        <property name="maxPoolPreparedStatementPerConnectionSize" value="20" />
-
-        <!-- 配置监控统计拦截的filters -->
-        <property name="filters" value="stat" />
-  </bean>
-	<!-- druid数据库连接池 -->
-	<bean id="druidDataSource2" class="org.apache.ibatis.datasource.pooled.PooledDataSource">
-        <!-- 基本属性 url、user、password -->
-        <property name="driver" value="${jdbc.driver}" />
-        <property name="url" value="${jdbc.url}" />
-        <property name="username" value="${jdbc.username}" />
-        <property name="password" value="${jdbc.password}"/>
-  </bean>
-	<!-- myabtis的数据库连接源 -->
-  <bean id="h2DataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
-        <!-- 基本属性 url、user、password -->
-        <property name="driverClassName" value="${jdbc.driver}" />
-        <property name="url" value="${jdbc.url}" />
-        <property name="username" value="${jdbc.username}" />
-        <property name="password" value="${jdbc.password}"/>
-   </bean>
-
-	 <!-- 2.会话工厂bean sqlSessionFactoryBean 用于生产SqlSession-->
-   <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
-       <!-- 数据源 -->
-       <property name="dataSource" ref="h2DataSource"></property>
-       <!-- sql映射文件路径 -->
-       <property name="configLocation" value="classpath:mybatis-config.xml"/>
-   </bean>
-
- 	 <!-- 3.自动扫描对象关系映射 Mapper-->
-   <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
-       <!--指定会话工厂，如果当前上下文中只定义了一个则该属性可省去 -->
-       <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
-       <!-- 指定要自动扫描mapper接口的包，实现接口 -->
-       <property name="basePackage" value="com.xiong.demo.spring.dao.inter"></property>
-   </bean>
 ```
+
+
 
  ![](/Users/qudian/Documents/MySpace/Note/pic_图片/mybatis流程.png)
 
+
+
 ## 配置总结
 
-可以这么总结Mybatis或者帮助理解Mybatis的配置，我总结了以下三点提供参考：
+可以这么总结Mybatis配置，我总结了以下三点提供参考：
 
 - 一切Mybatis配置都是为了创建SqlSession进行SQL查询；
 - 归根结底程序代码中我们屏蔽了各种配置映射，只显式调用使用Mapper接口，那么接口实现类的获得是通过SqlSession.getMapper()获得；
 - 那么mapper接口实现类的获得是通过mybatis-config.xml->SqlSessionFactoryBuilder->SqlSessionFacotry->SqlSession->mapper；
 
-## mybatis-spring依赖包
-
-MyBatis-Spring 会帮助你将 MyBatis 代码无缝地整合到 Spring 中。它将允许 MyBatis 参与到 Spring 的**事务管理**之中，创建映射器 mapper 和 **`SqlSession`** 并注入到 bean 中，以及将 Mybatis 的异常转换为 Spring 的 **`DataAccessException`**。最终，可以做到应用代码不依赖于 MyBatis，Spring 或 MyBatis-Spring。
 
 
+# Mybatis生命周
 
-# Mybatis生命周期　
+# plug拦截器
+
+**参考资料**
+
+- [MyBatis 插件之拦截器(Interceptor)](https://blog.csdn.net/weixin_39494923/article/details/91534658)
+
+@Intercepts标记了这是一个Interceptor，然后在@Intercepts中定义了两个@Signature，即两个拦截点。第一个@Signature我们定义了该Interceptor将拦截Executor接口中参数类型为MappedStatement、Object、RowBounds和ResultHandler的query方法；第二个@Signature我们定义了该Interceptor将拦截StatementHandler中参数类型为Connection的prepare方法。
+
+```java
+@Intercepts{@Signature(type = StatementHandler.class,method = "prepare",args = {Connection.class, Integer.class})}
+```
 
 
 
@@ -274,6 +322,7 @@ Mapper配置文件中${}与#{}
 <br>${}则直接添加上去，会直接参与编译,影响预编译,创建表格等使用
 <br>对于返回的结果集resultType为数据类型或自定义的类，对于多条数据，可以在Mapper接口指定List<E>返回值。
 在Application的主类中需要实现
+
 ```java
         try {
             //获取Mybatis配置
@@ -292,4 +341,174 @@ Mapper配置文件中${}与#{}
         session.commit();//这是个事务，需要提交才能修改成功
         session.close();//关闭session对话
 
+```
+
+# With Spring🍃
+
+
+
+## 依赖
+
+```xml
+<dependency>
+  <groupId>org.mybatis</groupId>
+  <artifactId>mybatis</artifactId>
+  <version>3.4.6</version>
+</dependency>
+
+<dependency>
+  <groupId>org.mybatis</groupId>
+ 	<artifactId>mybatis-spring</artifactId>
+	<version>1.3.2</version>
+</dependency>
+```
+
+### mybatis-spring依赖包
+
+MyBatis-Spring 会帮助你将 MyBatis 代码无缝地整合到 Spring 中。它将允许 MyBatis 参与到 Spring 的**事务管理**之中，创建映射器 mapper 和 **`SqlSession`** 并注入到 bean 中，以及将 Mybatis 的异常转换为 Spring 的 **`DataAccessException`**。最终，可以做到应用代码不依赖于 MyBatis，Spring 或 MyBatis-Spring。
+
+## 配置
+
+1. mybatis-config.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+  <!--配置-->
+    <settings>
+        <setting name="cacheEnabled" value="false"/>
+        <setting name="lazyLoadingEnabled" value="true"/>
+        <setting name="aggressiveLazyLoading" value="true"/>
+        <setting name="multipleResultSetsEnabled" value="true"/>
+        <setting name="useColumnLabel" value="true"/>
+        <setting name="useGeneratedKeys" value="false"/>
+        <setting name="autoMappingBehavior" value="PARTIAL"/>
+        <setting name="defaultExecutorType" value="SIMPLE"/>
+        <setting name="defaultStatementTimeout" value="300"/>
+        <!-- <setting name="mapUnderscoreToCamelCase" value="true"/> 自动转换大小写去除 -->
+    </settings>
+
+    <!--mapper的ml映射文件，用于mapper接口 ：mapper xml文件映射-->
+    <mappers>
+        <mapper resource="mapper/user-mapper.xml"/>
+    </mappers>
+</configuration>
+
+
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<!-- 根标签 -->
+<configuration>
+<properties>
+	<property name="driver" value="com.mysql.jdbc.Driver"/>
+	<property name="url" value="jdbc:mysql://127.0.0.1:3306/mybatis-110?useUnicode=true&amp;characterEncoding=utf-8&amp;allowMultiQueries=true"/>
+	<property name="username" value="root"/>
+    	<property name="password" value="123456"/>
+   </properties>
+
+   <!-- 环境，可以配置多个，default：指定采用哪个环境 -->
+   <environments default="test">
+      <!-- id：唯一标识 -->
+      <environment id="test">
+         <!-- 事务管理器，JDBC类型的事务管理器 -->
+         <transactionManager type="JDBC" />
+         <!-- 数据源，池类型的数据源 -->
+         <dataSource type="POOLED">
+            <property name="driver" value="com.mysql.jdbc.Driver" />
+            <property name="url" value="jdbc:mysql://127.0.0.1:3306/mybatis-110" />
+            <property name="username" value="root" />
+            <property name="password" value="123456" />
+         </dataSource>
+      </environment>
+      <environment id="development">
+         <!-- 事务管理器，JDBC类型的事务管理器 -->
+         <transactionManager type="JDBC" />
+         <!-- 数据源，池类型的数据源 -->
+         <dataSource type="POOLED">
+            <property name="driver" value="${driver}" /> <!-- 配置了properties，所以可以直接引用 -->
+            <property name="url" value="${url}" />
+            <property name="username" value="${username}" />
+            <property name="password" value="${password}" />
+         </dataSource>
+      </environment>
+   </environments>
+  </configuration>
+
+```
+
+spring Bean配置
+
+```xml
+	<!--1.配置数据源-->
+	<!-- druid数据库连接池 -->
+  <bean id="druidDataSource1" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+        <!-- 基本属性 url、user、password127.0.0.1 -->
+        <property name="driverClassName" value="${jdbc.driver}" />
+        <property name="url" value="${jdbc.url}" />
+        <property name="username" value="${jdbc.username}" />
+        <property name="password" value="${jdbc.password}"/>
+        <!-- 配置初始化大小、最小、最大 -->
+        <property name="initialSize" value="2" />
+        <property name="minIdle" value="1" />
+        <property name="maxActive" value="20" />
+
+        <!-- 配置获取连接等待超时的时间 -->
+        <property name="maxWait" value="60000" />
+
+        <!-- 配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒 -->
+        <property name="timeBetweenEvictionRunsMillis" value="60000" />
+
+        <!-- 配置一个连接在池中最小生存的时间，单位是毫秒 -->
+        <property name="minEvictableIdleTimeMillis" value="300000" />
+
+        <!-- 验证连接有效与否的SQL，不同的数据配置不同 -->
+
+        <property name="validationQuery" value="SELECT 'x' from dual " />
+        <property name="testWhileIdle" value="true" />
+        <property name="testOnBorrow" value="false" />
+        <property name="testOnReturn" value="false" />
+
+        <!-- 打开PSCache，并且指定每个连接上PSCache的大小 -->
+        <property name="poolPreparedStatements" value="true" />
+        <property name="maxPoolPreparedStatementPerConnectionSize" value="20" />
+
+        <!-- 配置监控统计拦截的filters -->
+        <property name="filters" value="stat" />
+  </bean>
+	<!-- druid数据库连接池 -->
+	<bean id="druidDataSource2" class="org.apache.ibatis.datasource.pooled.PooledDataSource">
+        <!-- 基本属性 url、user、password -->
+        <property name="driver" value="${jdbc.driver}" />
+        <property name="url" value="${jdbc.url}" />
+        <property name="username" value="${jdbc.username}" />
+        <property name="password" value="${jdbc.password}"/>
+  </bean>
+	<!-- myabtis的数据库连接源 -->
+  <bean id="h2DataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+        <!-- 基本属性 url、user、password -->
+        <property name="driverClassName" value="${jdbc.driver}" />
+        <property name="url" value="${jdbc.url}" />
+        <property name="username" value="${jdbc.username}" />
+        <property name="password" value="${jdbc.password}"/>
+   </bean>
+
+	 <!-- 2.会话工厂bean sqlSessionFactoryBean 用于生产SqlSession-->
+   <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+       <!-- 数据源 -->
+       <property name="dataSource" ref="h2DataSource"></property>
+       <!-- sql映射文件路径 -->
+       <property name="configLocation" value="classpath:mybatis-config.xml"/>
+   </bean>
+
+ 	 <!-- 3.自动扫描对象关系映射 Mapper-->
+   <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+       <!--指定会话工厂，如果当前上下文中只定义了一个则该属性可省去 -->
+       <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
+       <!-- 指定要自动扫描mapper接口的包，实现接口 -->
+       <property name="basePackage" value="com.xiong.demo.spring.dao.inter"></property>
+   </bean>
 ```
