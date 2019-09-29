@@ -17,17 +17,19 @@
 
 # 配置
 
-1. Mapper.xml
+## 1. Mapper.xml
 
 ```xml
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
-<!--配置命名空间，相当于这个这些接口的命名空间-->
-<!--对于使用Mapper实现类方法获取CRUD，这个命名空间就是该来的全路径com.example.dao.inter.UserMapper-->
-<mapper namespace="UserMapper" >
+<mapper namespace="com.xiong.demo.mybatis_native.dao.inter.UserMapper" >
     <resultMap id="BaseResultMap" type="com.xiong.demo.mybatis_native.dao.entity.User" >
-        <id column="id" property="id" jdbcType="BIGINT" />
-        <result column="user_id" property="userId" jdbcType="BIGINT" />
+        <!-- id标签：指定查询列中的唯一标识，表的唯一标识，如果有多个字段组成唯一标识，配置多个id -->
+        <!-- column：数据库字段-->
+        <!-- property：pojo属性名 -->
+        <!-- jdbcType: 对应数据库的字段类型-->
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
         <result column="name" property="name" jdbcType="VARCHAR" />
         <result column="age" property="age" jdbcType="INTEGER" />
         <result column="address" property="address" jdbcType="VARCHAR" />
@@ -35,16 +37,72 @@
         <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
     </resultMap>
 
+    <resultMap id="userMapWithAddress" type="com.xiong.demo.mybatis_native.dao.entity.UserWithAddress" >
+        <!-- id标签：指定查询列中的唯一标识，表的唯一标识，如果有多个字段组成唯一标识，配置多个id -->
+        <!-- column：数据库字段-->
+        <!-- property：pojo属性名 -->
+        <!-- jdbcType: 对应数据库的字段类型-->
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="name" property="name" jdbcType="VARCHAR" />
+        <result column="age" property="age" jdbcType="INTEGER" />
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <!-- association：用于映射关联查询单个对象的信息 -->
+            <!-- property: 映射到主类中哪个属性 -->
+        <association property="address" javaType="com.xiong.demo.mybatis_native.dao.entity.Address">
+            <id column="id" property="id" jdbcType="BIGINT"/>
+            <result column="address" property="address" jdbcType="VARCHAR"/>
+            <result column="code" property="code" jdbcType="VARCHAR"/>
+        </association>
+    </resultMap>
+
+    <resultMap id="userMapWithOrder" type="com.xiong.demo.mybatis_native.dao.entity.UserWithOrder" >
+        <!-- id标签：指定查询列中的唯一标识，表的唯一标识，如果有多个字段组成唯一标识，配置多个id -->
+        <!-- column：数据库字段-->
+        <!-- property：pojo属性名 -->
+        <!-- jdbcType: 对应数据库的字段类型-->
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="name" property="name" jdbcType="VARCHAR" />
+        <collection property="orderList" ofType="com.xiong.demo.mybatis_native.dao.entity.Order" javaType="java.util.ArrayList">
+            <id column="o_id" property="id" jdbcType="BIGINT"/>
+            <result column="o_user_id" property="userId" jdbcType="BIGINT"/>
+            <result column="o_order_name" property="orderName" jdbcType="VARCHAR" />
+            <result column="o_amount" property="amount" jdbcType="INTEGER" />
+        </collection>
+    </resultMap>
+
     <sql id="Base_Column_List" >
         id,user_id,name,age,address,create_time,update_time
     </sql>
 
-    <select id="getUserByUserId" resultMap="BaseResultMap" parameterType="java.lang.Long">
+    <select id="getUserByUserId" resultMap="BaseResultMap" parameterType="java.lang.Long" >
         select
         <include refid="Base_Column_List" />
         from user
         where user_id = #{userId,jdbcType=BIGINT}
     </select>
+
+    <select id="getMapByUserId" resultType="HashMap" parameterType="java.lang.Long">
+        select
+        <include refid="Base_Column_List" />
+        from user
+        where user_id = #{userId,jdbcType=BIGINT}
+    </select>
+
+    <select id="getUserMapWithAddressByUserId" resultMap="userMapWithAddress" parameterType="java.lang.Long" >
+        select u.*,o.*
+        from `user` u inner join address a on(u.address = a.address)
+        where u.user_id = #{userId,jdbcType=BIGINT}
+    </select>
+
+    <select id="getUserMapWithOrderByUserId" resultMap="userMapWithOrder" parameterType="java.lang.Long">
+        select u.*,o.id o_id,o.user_id o_user_id,o.order_name o_order_name,o.amount o_amount
+        from `user` u inner join `order` o on(u.user_id = o.user_id)
+        where u.user_id = #{userId,jdbcType=BIGINT}
+    </select>
+
 
     <insert id="insertUser" parameterType="com.xiong.demo.mybatis_native.dao.entity.User">
             insert into user
@@ -57,9 +115,75 @@
 
 ```
 
+### CRUD标签
+
+#### select
+
+- resultType：将结果集映射为java的对象类型。必须（和 resultMap 二选一）
+
+  > 使用**resultType**进行**输出映射**，只有查询出来的列名和pojo中的属性名一致，该列才可以映射成功。
+  > 如果查询出来的列名和pojo中的属性名**全部不一致**，没有创建pojo对象。
+  > 只要查询出来的列名和pojo中的属性**有一个一致**，就会创建pojo对象。
+
+  > (1)输出**单个pojo对象**，Mapper方法返回值是单个对象类型
+  >
+  > (2)输出**pojo对象list**，Mapper方法返回值是List\<Pojo>，resultType仍然是pojo类
+  >
+  > 生成的动态代理对象中是根据Mapper方法的**返回值类型**确定是调用selectOne或selectList
+  >
+  > (3)输出**hashmap**
+  > 输出pojo对象可以改用HashMap输出类型，将输出的字段名称作为Map的key，value为字段值。如果是集合，那就是Mapper方法返回值List里面套了HashMap。
+
+- resultMap：将结果集的字段做高级映射，比如字段名，n对n映射
+
+  > jdbcType和javaType为字段映射时的数据类型，mybatis会有默认配置，个别特殊的可能会有问题。mysql中的「datetime」字段类型，对应的jdbcType位「TIMESTAMP」，java中的数据类型可以是java.util.Date（该类为父类）。
+
+  - 1对1
+
+    > 使用\<association>标签：用于映射关联查询单个对象的信息，该标签的property 属性：要将关联查询的表（表名） 映射到主类中哪个属性 。
+
+  - 1对n
+
+    > 使用\<cellection>标签：用于主POJO的list属性对应关联查询的多条数据。
+
+  
+
+- parameterType：传入参数类型。这个属性可以不写，Myabatis会自动识别。
+
+  - 基本数据类型：#{参数|@Param()指定的参数名} 获取Mapper方法参数中的值
+  - 复杂数据类型：#{类属性名}  ，Map中则是#{键名}
+
+- statementType：指定如何操作SQL语句。
+
+  - STATEMENT：Statement，直接操作sql，不进行预编译，使用**$**获取参数
+  - PREPARED：（默认该方式）PreparedStatement，预处理，参数，进行预编译，使用**#**获取参数
+  - CALLABLE：CallableStatement，执行存储过程
+    
+
+#### insert
+
+- parameterType：参数的类型。
+- useGeneratedKeys：**true**开启主键回写
+- keyColumn：指定数据库的主键
+- keyProperty：主键对应的pojo属性名
+
+### update
+
+- parameterType：传入的参数类型。
+
+### delete
+
+- parameterType：传入的参数类型。
 
 
-2. mybatis-config.xml
+
+
+
+
+
+
+
+## 2. mybatis-config.xml
 
 [mybatis-config.xml详解](https://mybatis.org/mybatis-3/zh/configuration.html)
 
@@ -130,9 +254,23 @@
 
 ```
 
+### 事务
+
+开启事务需要**手动**SqlSession.commit()提交。
 
 
-3. java代码中使用
+
+
+
+
+
+
+
+
+
+
+
+## 3. java代码中使用demo
 
 ```java
 // 指定全局配置文件
