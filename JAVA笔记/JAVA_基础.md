@@ -97,6 +97,10 @@ public static final int value = 123 //这个阶段是123
 - 程序在执行过程中遇到了异常或错误而异常终止
 - 由于操作系统出现错误而导致Java虚拟机进程终止
 
+### New一个对象
+
+Java语法层面 使用**new**关键字创建一个Java对象时，JVM首先会检查这个**new指令**的参数能否在常量池中定位到一个类的符号引用，然后检查与这个符号引用相对应的**类是否已经成功经 历加载、解析和初始化等步骤**，当类完成装载步骤之后，就已经完全确定出创建对象实例时所需的内存空间大小，接下来JVM将会对其进行**内存分配**，以存储所生成的对象实例
+
 ## 运行时内存区域
 
 <img src="../pic_图片/jvm内存区域.png" style="zoom:200%;" />
@@ -644,6 +648,97 @@ int value3 = cache2.getValue();
 ## 其他
 
 - 类内部定义的泛型不会被类型擦除。可以使用**匿名内部类**保留数据类型。
+
+
+
+# 反射
+
+## 获取类
+
+- **使用 Class.forName 静态方法。**前提：**已明确类的全路径名**如：com.demo.DemoClass;
+- 使用**类.class** 方法。说明：仅适合在编译前就已经明确要操作的 Class
+- 使用**对象.getClass() **方法。
+
+
+
+## 获取构造方法
+
+**Constructor**类
+
+- Class对象.**getConstructor()**获取<font color ="blue">public参构造方法</font>
+
+- Class对象.**getDeclaredConstructor()**获取<font color ="blue">所有的构造方法</font>
+
+```java
+public List<String> getConstructorInfo(){
+        List<String> lists = new ArrayList<>();
+        Constructor[] constructors = aClass.getConstructors();
+        for (Constructor constructor:constructors){
+            List params = Arrays.asList(constructor.getParameterTypes());
+            lists.add("Constructor:"+constructor.getName()+" _Args: "+params.toString());
+        }
+        return lists;
+    }
+```
+
+
+
+## 获取方法
+
+**Method**类
+
+
+
+### 获取返回值数据类型
+
+- **getGenericReturnType**()方法获取泛型
+
+- **getReturnType**()方法获取返回类型 返回Class<?>[]
+- **getParameterTypes**()获取方法的参数
+
+- **getAnnotations**()获取注释 返回Class<?>[]
+
+
+
+
+
+## 获取修饰符
+
+**Modifier**类
+
+
+
+## 获取变量
+
+**Field**类
+
+
+
+## 获取数据类型
+
+**Type**类
+
+**Class\<?>**类
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
