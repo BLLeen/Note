@@ -714,6 +714,23 @@ public List<String> getConstructorInfo(){
 
 
 
+```java
+DemoClass demoClass = new DemoClass();
+demoClass.demoName="myDemo";
+try {
+  Field field = DemoClass.class.getField("demoName");
+  System.out.println((String)field.get(demoClass)); // out: myDemo
+}catch (NoSuchFieldException  nsfe){
+  System.out.println(nsfe.getCause());
+}catch (IllegalAccessException iae){
+  System.out.println(iae.getCause());
+}
+```
+
+
+
+
+
 ## 获取数据类型
 
 **Type**类
@@ -747,6 +764,7 @@ public List<String> getConstructorInfo(){
 # 杂记
 
 ## System.out.print()
+
 作为一个很常用的函数，了解了解内部实现
 
 ```java
@@ -803,3 +821,14 @@ private void write(String s) {
     }
 ```
 
+## ==，hashCode()与equal()
+
+- ==
+
+  - 基础类型
+
+    比较的是数据类型的**值**。
+
+  - String与基础类型的包装类
+
+    比较的是**内存地址**。

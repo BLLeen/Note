@@ -1,7 +1,11 @@
-Java集合框架
+<h1>Java集合框架</h1>
+
+
 
 # Collection接口
-![Collection](http://images.cnblogs.com/cnblogs_com/zhxxcq/201203/20120310224515289.png)
+
+
+
 ## List接口(extends Collection)
 
 ### Vector类
