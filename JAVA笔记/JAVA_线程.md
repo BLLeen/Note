@@ -155,26 +155,33 @@ public ThreadPoolExecutor(int corePoolSize,int maximumPoolSize,long keepAliveTim
 
 
 
-## 线程终止
+## 线程中断
 
-### interrupt()
+每个线程都有一个 打扰 标志。这里分两种情况，
+
+1. **线程在sleep wait join**， 此时如果别的进程调用此进程的 **interrupt() 方法**，此线程会**被唤醒**并被要求处理**InterruptedException**。
+
+2. **此线程在运行中， 则不会收到提醒**。但是此线程的 “中断标志”会被设置， 可以通过**isInterrupted()**查看并作出处理。
+
+**interrupt()**
 
 - 允许自行调用这个方法，其他线程调用的话会，可能会报SecurityException
 - 对于处于阻塞状态的线程调用interrupt()，interrupt状态会被清除并报InerruptException()
 - 如果被阻塞在Selector选择器中会被从选择器中返回，并标记为true
 - 非以上情况会立即标记为true
 
-### this.interrupted()
+**this.interrupted()**
+
 测试**当前线程**是否已经中断。线程的中断状态由**该方法清除**。换句话说，如果连续两次调用该方法，则第二次调用返回false。
 
-### 终止阻塞状态的线程
+**终止阻塞状态的线程**
 
 通过try-catch捕获InterruptException来终止线程
 
 - 对于循环体在try-catch内则直接终止退出循环
 - 对于循环体在try-catch外则需要手动退出循环
 
-### 终止运行状态的线程
+**终止运行状态的线程**
 
 通过“标记”的方式来终止
 
@@ -182,7 +189,7 @@ public ThreadPoolExecutor(int corePoolSize,int maximumPoolSize,long keepAliveTim
 - 通过额外添加标记的方式类终止，设置中断标志
   设置volatile boolean stop = false 再通过设置stop标志，手动判断是否需要stop
 
-### 综合
+**综合**
 
 ```java
 @Override
@@ -319,25 +326,138 @@ synchronized方法，一定要显示标明，它是不能隐式标明的，进�
 
 > 保证变量在**线程间可见**，对volatile变量所有的写操作都能立即反应到其他线程中，换句话说，**volatile变量在各个线程中是一致的**（得益于java内存模型—"先行发生原则"），并不能是该变量为原子操作。比如多个线程同时对**volatile i **执行加1操作，那么**线程A**和**线程B**内存中获取的都是i当前值（假设当前为10），则A，B执行+1过后为11。
 
+```java
+public class VolatileApp {
+    static private Integer value = 0;   // 输出全为 0 
+ // static private volatile Integer value = 0; // 输出可能带有1
+    static synchronized void  add(){
+            value ++;
+        		value --;
+    }
+    static int get(){ return value;}
+    public static void main(String[] args) {
+        new Thread(() -> {
+            while (true) {
+                try {
+                    add();
+                }catch (Exception e){
+                }
+            }
+        }).start();
+        new Thread(() -> {
+            while (true) {
+                try {
+                    System.out.println("read：" + get());
+                }catch (Exception e){
+                }
+            }
+        }).start();
+        new Thread(() -> {
+            try {
+                TimeUnit.MILLISECONDS.sleep(1);
+                System.exit(10);
+            }catch (Exception e){
+            }
+        }).start();
+    }
+}
+```
+
+
+
 **适用条件：**
 
 - 对变量的写操作不依赖于当前值。
 - 该变量没有包含在具有其他变量的不变式中。
 
+
+
+**使用场景**
+
+**参考资料**：[正确使用 Volatile 变量](https://www.ibm.com/developerworks/cn/java/j-jtp06197.html)
+
+- **状态标志**
+
+  用于指示发生了一个重要的一次性事件，例如完成初始化或请求停机。多线程调用**shutdown()**，**shutdownRequested**变量不依赖当前值，修改为**true**，当一个线程修改值，写入内存中，可以在内存中获取该变量被修改的的内容（**true**）。
+
+  ```java
+  volatile boolean shutdownRequested;  
+  public void shutdown() { 
+    shutdownRequested = true; 
+  }
+  public void doWork() { 
+      while (!shutdownRequested) { 
+          // do stuff
+      }
+  }
+  ```
+
+- **一次性安全发布**（单例模式对象实例化）
+
+  缺乏同步会导致无法实现可见性，这使得确定何时写入对象引用而不是原语值变得更加困难。在缺乏同步的情况下，可能会遇到某个对象引用的更新值（由另一个线程写入）和该对象状态的旧值**同时存在**。**volatile**保证singleton可见，判断singleton是否为null的时候及时得知其他线程对其的实例化。
+
+  ```java
+  public class Singleton {  
+      private volatile static Singleton singleton;  
+      private Singleton (){}  
+      public static Singleton getSingleton() {  
+      if (singleton == null) {  
+          synchronized (Singleton.class) {  
+          if (singleton == null) {  
+              singleton = new Singleton();  
+          }  
+          }  
+      }  
+      return singleton;  
+      }  
+  }
+  ```
+
+
+
+- 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## ReentrantLock重入锁
 
-ReentrantLock rlock = new ReentrantLock()
-rlock.lock() rlock.unlock()显示加解锁
+> 可重入锁又名递归锁，是指**在同一个线程在外层方法获取锁**的时候，再进入**该线程的内层方法会自动获取锁（前提锁对象得是同一个对象或者class）**，不会因为之前已经获取过还没释放而阻塞
+>
+> 首先ReentrantLock和NonReentrantLock都继承父类AQS，其父类AQS中维护了一个同步状态status来计数重入次数，status初始值为0。
+>
+> 当线程尝试获取锁时，可重入锁先尝试获取并更新status值，如果status == 0表示没有其他线程在执行同步代码，则把status置为1，当前线程开始执行。如果status != 0，则判断当前线程是否是获取到这个锁的线程，如果是的话执行status+1，且当前线程可以再次获取锁。而非可重入锁是直接去获取并尝试更新当前status的值，如果status != 0的话会导致其获取锁失败，当前线程阻塞。
+>
+> 释放锁时，可重入锁同样先获取当前status的值，在当前线程是持有锁的线程的前提下。如果status-1 == 0，则表示当前线程所有重复获取锁的操作都已经执行完毕，然后该线程才会真正释放锁。而非可重入锁则是在确定当前线程是持有锁的线程之后，直接将status置为0，将锁释放。
+>
+> 要点：
+>
+> - 可重入锁的一个优点是可一定程度避免死锁
+> - AQS通过控制status状态来判断锁的状态，对于非可重入锁状态不是0则去阻塞；对于可重入锁如果是0则执行，非0则判断当前线程是否是获取到这个锁的线程，是的话把status状态＋1，释放的时候，只有status为0，才将锁释放。
 
-### 中断响应
 
-对于synchronized块来说，要么获取到锁执行，要么持续等待。而重入锁的中断响应功能就合理地避免了这样的情况。比如，一个正在等待获取锁的线程被“告知”无须继续等待下去，就可以停止工作了。
+
+### 线程中断响应
+
+线程如果再**等待锁而被阻塞**的时候被调用**interrupt()**，该线程会被唤醒处理**InterruptedException**。如果线程**已经被标志「中断状态」**，再调用lockInterruptibly()来获取锁的时候需要去处理**InterruptedException**。
 
 ```java
-import java.util.concurrent.locks.ReentrantLock;
-ReentrantLock rlock = new ReentrantLock()
-rlock.lockInterruptibly()  // 以可以响应中断的方式加锁
-if (rlock.isHeldByCurrentThread()) lock1.unlock();  //判断获取锁是否已由当前线程占用
+try{
+  lock.lockInterruptibly();
+}catch(InterruptedException ie){
+  // 处理中断
+}finally{
+  lock.unlock;
+}
 ```
 
 ### 锁申请等待限时
